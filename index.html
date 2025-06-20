@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Recherche TGVmax</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    input, button, select { padding: 10px; margin: 10px 0; width: 300px; }
+    #results { margin-top: 30px; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Recherche TGVmax</h1>
+  <form id="searchForm">
+    <label>Date (jj/mm/aaaa) :</label><br>
+    <input type="text" id="date" placeholder="Ex: 04/06/2025"><br>
+
+    <label>Gare de départ :</label><br>
+    <input type="text" id="from" placeholder="Ex: PARIS MONTPARNASSE"><br>
+
+    <label>Gare d'arrivée :</label><br>
+    <input type="text" id="to" placeholder="Ex: LYON PART DIEU"><br>
+
+    <label>Heure de départ souhaitée (hh:mm) :</label><br>
+    <input type="text" id="departureTime" placeholder="Ex: 08:00"><br>
+
+    <label>Nombre maximal de correspondances :</label><br>
+    <input type="number" id="maxConnections" min="0" value="0"><br>
+
+    <label>Indépendant du nombre de correspondances :</label>
+    <input type="checkbox" id="anyConnections"><br>
+
+    <label>Indifférent à l'horaire de départ :</label>
+    <input type="checkbox" id="anyTime"><br>
+
+    <label>Accepte d'arriver dans une gare proche :</label>
+    <input type="checkbox" id="nearbyArrival"><br>
+
+    <button type="submit">Rechercher</button>
+  </form>
+
+  <div id="results"></div>
+
+  <script>
+    document.getElementById('searchForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const date = document.getElementById('date').value;
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const departureTime = document.getElementById('departureTime').value;
+      const maxConnections = document.getElementById('maxConnections').value;
+      const anyConnections = document.getElementById('anyConnections').checked;
+      const anyTime = document.getElementById('anyTime').checked;
+      const nearbyArrival = document.getElementById('nearbyArrival').checked;
+
+      const response = await fetch('/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date, from, to, departureTime, maxConnections, anyConnections, anyTime, nearbyArrival
+        })
+      });
+
+      const data = await response.json();
+      const resultsDiv = document.getElementById('results');
+      if (data.error) {
+        resultsDiv.innerHTML = `<p>${data.error}</p>`;
+      } else {
+        let html = '<h3>Itinéraires trouvés :</h3><ul>';
+        data.itineraries.forEach((itinerary, index) => {
+          html += `<li><strong>Itinéraire ${index + 1} :</strong><br>`;
+          itinerary.forEach(segment => {
+            html += `${segment.origine} (${segment.departure_time}) → ${segment.destination} (${segment.arrival_time})<br>`;
+          });
+          html += '</li><br>';
+        });
+        html += '</ul>';
+        resultsDiv.innerHTML = html;
+      }
+    });
+  </script>
+</body>
+</html>
